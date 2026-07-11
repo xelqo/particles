@@ -1,14 +1,13 @@
-const canva  = document.querySelector('canvas');
+const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 
 canvas.width = window.innerWidth * window.devicePixelRatio;
 canvas.height = window.innerHeight * window.devicePixelRatio;
+canvas.style.width = `${window.innerWidth}px`;
+canvas.style.height = `${window.innerHeight}px`;
 
-canvas.style.widht = '${window.innerWidth}px';
-canvas.style.width = '${window.innerHeight}px';
-
-class Particle{
-    constructor(x, y, effect){
+class Particle {
+    constructor(x, y, effect) {
         this.originX = x;
         this.originY = y;
         this.effect = effect;
@@ -27,34 +26,32 @@ class Particle{
         this.angle = 0;
         this.size = 2;
         this.draw();
-
-    }   
-
-    draw(){
-        this.ctx.beginPath();
-        this.ctx.fillRect(this.x, this.y, this.size, this.size)
     }
 
-    update(){
+    draw() {
+        this.ctx.fillRect(this.x, this.y, this.size, this.size);
+    }
+
+    update() {
         this.dx = this.effect.mouse.x - this.x;
         this.dy = this.effect.mouse.y - this.y;
         this.distance = this.dx * this.dx + this.dy * this.dy;
-        this.force = -this.mouse.radius / this.distance * 8;
-        
-        if(this.distance < this.effect.mouse.radius) {
+        this.force = -this.effect.mouse.radius / this.distance * 8;
+
+        if (this.distance < this.effect.mouse.radius) {
             this.angle = Math.atan2(this.dy, this.dx);
             this.vx += this.force * Math.cos(this.angle);
             this.vy += this.force * Math.sin(this.angle);
         }
 
-        this.x + (this.vx *= this.friction) + (this.originX - this.x) * this.ease;
-        this.y + (this.vy *= this.friction) + (this.originY - this.y) * this.ease;
-        this.draw()
+        this.x += (this.vx *= this.friction) + (this.originX - this.x) * this.ease;
+        this.y += (this.vy *= this.friction) + (this.originY - this.y) * this.ease;
+        this.draw();
     }
 }
 
 class Effect {
-    constructor(width, height, context){
+    constructor(width, height, context) {
         this.width = width;
         this.height = height;
         this.ctx = context;
@@ -64,43 +61,47 @@ class Effect {
             radius: 3000,
             x: 0,
             y: 0
-        }
+        };
+
         window.addEventListener('mousemove', e => {
             this.mouse.x = e.clientX * window.devicePixelRatio;
-            this.mouse.y = e.pageY * window.devicepixelRatio;
-        })
+            this.mouse.y = e.clientY * window.devicePixelRatio;
+        });
 
-        window.addEvevntListner('reisze', () => {
+        window.addEventListener('resize', () => {
             canvas.width = window.innerWidth * window.devicePixelRatio;
             canvas.height = window.innerHeight * window.devicePixelRatio;
-            this.width = canvas.width
-            this.height = canvas.height
-            canvas.style.widht = '${window.innerWidth}px';
-            canvas.style.width = '${window.innerHeight}px';
+            this.width = canvas.width;
+            this.height = canvas.height;
+            canvas.style.width = `${window.innerWidth}px`;
+            canvas.style.height = `${window.innerHeight}px`;
             this.particleArray = [];
             this.init();
-        })
+        });
+
         this.init();
     }
 
-    init(){
-        for(let x = 0; x < this.width; x += this.gap){
-            for(let y = 0; y < this.height; y += this.gap){
-                this.particleArray.push(new Particle(x, y, this))
+    init() {
+        for (let x = 0; x < this.width; x += this.gap) {
+            for (let y = 0; y < this.height; y += this.gap) {
+                this.particleArray.push(new Particle(x, y, this));
             }
         }
     }
 
-    update(){
-        this.ctx.clearRect(0,0, this.width, this.height);
-        for(let i = 0; i < this.particleArray.length; i ++){
+    update() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        for (let i = 0; i < this.particleArray.length; i++) {
             this.particleArray[i].update();
         }
     }
 }
-let effect = new Effect(canvas.width, canvas.height, ctx)
+
+const effect = new Effect(canvas.width, canvas.height, ctx);
+
 function animate() {
     effect.update();
-    requestAnimationFrame(animate)
+    requestAnimationFrame(animate);
 }
-animate
+animate();
