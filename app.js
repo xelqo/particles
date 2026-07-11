@@ -9,7 +9,30 @@ canvas.style.width = '${window.innerHeight}px';
 
 class Particle{
     constructor(x, y, effect){
+        this.originX = x;
+        this.originY = y;
+        this.effect = effect;
+        this.x = Math.floor(x);
+        this.y = Math.floor(y);
+        this.ctx = this.effect.ctx;
+        this.ctx.fillStyle = 'white';
+        this.vx = 0;
+        this.vy = 0;
+        this.ease = 0.2;
+        this.friction = 0.95;
+        this.dx = 0;
+        this.dy = 0;
+        this.distance = 0;
+        this.force = 0;
+        this.angle = 0;
+        this.size = 2;
+        this.draw();
 
+    }   
+
+    draw(){
+        this.ctx.beginPath();
+        this.ctx.fillRect(this.x, this.y, this.size, this.size )
     }
 }
 
