@@ -32,7 +32,24 @@ class Particle{
 
     draw(){
         this.ctx.beginPath();
-        this.ctx.fillRect(this.x, this.y, this.size, this.size )
+        this.ctx.fillRect(this.x, this.y, this.size, this.size)
+    }
+
+    update(){
+        this.dx = this.effect.mouse.x - this.x;
+        this.dy = this.effect.mouse.y - this.y;
+        this.distance = this.dx * this.dx + this.dy * this.dy;
+        this.force = -this.mouse.radius / this.distance * 8;
+        
+        if(this.distance < this.effect.mouse.radius) {
+            this.angle = Math.atan2(this.dy, this.dx);
+            this.vx += this.force * Math.cos(this.angle);
+            this.vy += this.force * Math.sin(this.angle);
+        }
+
+        this.x + (this.vx *= this.friction) + (this.originX - this.x) * this.ease;
+        this.y + (this.vy *= this.friction) + (this.originY - this.y) * this.ease;
+        this.draw()
     }
 }
 
@@ -60,7 +77,6 @@ class Effect {
             this.height = canvas.height
             canvas.style.widht = '${window.innerWidth}px';
             canvas.style.width = '${window.innerHeight}px';
-
             this.particleArray = [];
             this.init();
         })
@@ -74,6 +90,17 @@ class Effect {
             }
         }
     }
-}
 
+    update(){
+        this.ctx.clearRect(0,0, this.width, this.height);
+        for(let i = 0; i < this.particleArray.length; i ++){
+            this.particleArray[i].update();
+        }
+    }
+}
 let effect = new Effect(canvas.width, canvas.height, ctx)
+function animate() {
+    effect.update();
+    requestAnimationFrame(animate)
+}
+animate
