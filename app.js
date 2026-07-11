@@ -7,29 +7,31 @@ canvas.style.width = `${window.innerWidth}px`;
 canvas.style.height = `${window.innerHeight}px`;
 
 class Particle {
-    constructor(x, y, effect) {
+    constructor(x, y, color, radius, effect) {
         this.originX = x;
         this.originY = y;
+        this.color = color;
+        this.raidus = radius;
         this.effect = effect;
-        this.x = Math.floor(x);
-        this.y = Math.floor(y);
+        this.x = Math.floor(x) * this.effect.width;
+        this.y = Math.floor(y) * this.effect.height;
         this.ctx = this.effect.ctx;
-        this.ctx.fillStyle = 'white';
         this.vx = 0;
         this.vy = 0;
-        this.ease = 0.2;
-        this.friction = 0.95;
+        this.ease = 0.05 + Math.random() * 0.05;
+        this.friction = 0.90;
         this.dx = 0;
         this.dy = 0;
         this.distance = 0;
         this.force = 0;
         this.angle = 0;
-        this.size = 2;
-        this.draw();
     }
 
     draw() {
-        this.ctx.fillRect(this.x, this.y, this.size, this.size);
+        this.ctx.fillStyle = this.color;
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, this.radius, 0, Math.Pi * 2);
+        this.ctx.fill();
     }
 
     update() {
