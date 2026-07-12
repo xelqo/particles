@@ -58,9 +58,12 @@ class Effect {
         this.height = height;
         this.ctx = context;
         this.particleArray = [];
-        this.gap = 20;
+        this.gap = 9;
+        this.threshold = 22;
+        this.coreFocus = 0.55;
+        this.edgeFocus = 1.0;
         this.mouse = {
-            radius: 3000,
+            radius: 20000,
             x: 0,
             y: 0
         };
@@ -77,17 +80,72 @@ class Effect {
             this.height = canvas.height;
             canvas.style.width = `${window.innerWidth}px`;
             canvas.style.height = `${window.innerHeight}px`;
-            this.particleArray = [];
-            this.init();
+            if (this.image) this.init(this.image);
         });
 
         this.init();
     }
 
-    init() {
-        for (let x = 0; x < this.width; x += this.gap) {
-            for (let y = 0; y < this.height; y += this.gap) {
-                this.particleArray.push(new Particle(x, y, this));
+    init(image) {
+        this.image = image;
+        this.particleArray = [];
+ 
+        // Scale image to fit the canvas while keeping aspect ratio (max ~70% of screen)
+        const maxW = this.width * 0.7;
+        const maxH = this.height * 0.7;
+        const scale = Math.min(maxW / image.width, maxH / image.height);
+        const drawW = image.width * scale;
+        const drawH = image.height * scale;
+        const offsetX = (this.width - drawW) / 2;
+        const offsetY = (this.height - drawH) / 2;
+ 
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        this.ctx.drawImage(image, offsetX, offsetY, drawW, drawH);
+ 
+        const pixels = this.ctx.getImageData(0, 0, this.width, this.height).data;
+        this.ctx.clearRect(0, 0, this.width, this.height);
+ 
+        const maxRadius = this.gap * 0.55;
+        // Center of the drawn image + its half-extents, for the radial focus mask
+        const cx = offsetX + drawW / 2;
+        const cy = offsetY + drawH / 2;
+        const halfW = drawW / 2;
+        const halfH = drawH / 2;
+ 
+        for (let y = 0; y < this.height; y += this.gap) {
+            for (let x = 0; x < this.width; x += this.gap) {
+                const index = (y * this.width + x) * 4;
+                const alpha = pixels[index + 3];
+                if (alpha > 0) {
+                    const r = pixels[index];
+                    const g = pixels[index + 1];
+                    const b = pixels[index + 2];
+                    // Convert to grayscale (luminance)
+                    const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+                    if (brightness > this.threshold) {
+                        // Radial focus: 0 at center, 1 at the image edge (elliptical)
+                        const nx = (x - cx) / halfW;
+                        const ny = (y - cy) / halfH;
+                        const dist = Math.sqrt(nx * nx + ny * ny);
+                        // focus = 1 inside core, ramps to 0 by edgeFocus
+                        const focus = Math.min(1, Math.max(0,
+                            (this.edgeFocus - dist) / (this.edgeFocus - this.coreFocus)));
+                        if (focus <= 0) continue;                 // outside focus -> skip
+                        if (Math.random() > focus) continue;      // thin out toward edges
+ 
+                        // Brighter pixels -> larger, whiter dots
+                        const t = brightness / 255;
+                        const variance = 0.55 + Math.random() * 0.9; // 0.55–1.45x
+                        // Edge dots also shrink, so the center stays the visual focus
+                        const radius = (1.5 + t * maxRadius) * variance * (0.4 + 0.6 * focus);
+                        // Wide tonal range: shadows -> dark grey, highlights -> white.
+                        // Gamma < 1 lifts shadow detail so darker parts stay visible.
+                        const tone = Math.pow(t, 0.7);
+                        const shade = Math.round(55 + tone * 200); // 55–255 grey
+                        const color = `rgb(${shade},${shade},${shade})`;
+                        this.particleArray.push(new Particle(x, y, color, radius, this));
+                    }
+                }
             }
         }
     }
