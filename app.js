@@ -158,3 +158,14 @@ function animate() {
     requestAnimationFrame(animate);
 }
 animate();
+
+document.euqerySelector('upload').addEventLIstener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+        effect.init(img);
+        URL.revokeObjectURL(img.src);
+    };
+    img.src =URL.createObjectURL(file);
+});
