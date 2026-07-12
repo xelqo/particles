@@ -18,8 +18,8 @@ class Particle {
         this.ctx = this.effect.ctx;
         this.vx = 0;
         this.vy = 0;
-        this.ease = 0.05 + Math.random() * 0.05;
-        this.friction = 0.90;
+        this.ease = 0.02 + Math.random() * 0.02;
+        this.friction = 0.1;
         this.dx = 0;
         this.dy = 0;
         this.distance = 0;

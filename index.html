@@ -4,15 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <title>Image Particles</title>
+    <title>Dotify</title>
 </head>
 <body>
  
-    <canvas id="canvas"></canvas>
+    <!-- ===== CHANGE THE NAME HERE ===== -->
+    <header>
+        <span class="wordmark">Dotify</span>
+    </header>
  
-    <div class="controls">
-        <label>Choose an image: <input type="file" id="upload" accept="image/*"></label>
-    </div>
+    <main>
+        <h1 class="prompt">put image to dotify<span class="cursor">_</span></h1>
+ 
+        <div class="controls">
+            <label class="btn" for="upload">Choose image</label>
+            <input type="file" id="upload" accept="image/*" hidden>
+            <span class="filename" id="filename">no file selected</span>
+ 
+            <select id="size" class="btn select" aria-label="Render size">
+                <option value="small">Small</option>
+                <option value="medium" selected>Medium</option>
+                <option value="large">Large</option>
+            </select>
+ 
+            <button class="btn go" id="go">Go &rarr;</button>
+        </div>
+ 
+        <div class="stage">
+            <canvas id="canvas"></canvas>
+        </div>
+    </main>
  
     <script src="./app.js"></script>
 </body>
