@@ -1,4 +1,4 @@
-const canvas = document.querySelector('canvas');
+const canvas = document.querySelector('#canvas');
 const ctx = canvas.getContext('2d');
 
 canvas.width = window.innerWidth * window.devicePixelRatio;
@@ -11,10 +11,10 @@ class Particle {
         this.originX = x;
         this.originY = y;
         this.color = color;
-        this.raidus = radius;
+        this.radius = radius;
         this.effect = effect;
-        this.x = Math.floor(x) * this.effect.width;
-        this.y = Math.floor(y) * this.effect.height;
+        this.x = Math.random(x) * this.effect.width;
+        this.y = Math.random(y) * this.effect.height;
         this.ctx = this.effect.ctx;
         this.vx = 0;
         this.vy = 0;
@@ -30,7 +30,7 @@ class Particle {
     draw() {
         this.ctx.fillStyle = this.color;
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.Pi * 2);
+        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         this.ctx.fill();
     }
 
@@ -83,7 +83,6 @@ class Effect {
             if (this.image) this.init(this.image);
         });
 
-        this.init();
     }
 
     init(image) {
@@ -159,7 +158,7 @@ function animate() {
 }
 animate();
 
-document.euqerySelector('upload').addEventLIstener('change', e => {
+document.querySelector('#upload').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
     const img = new Image();
