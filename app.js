@@ -120,26 +120,19 @@ class Effect {
                     const r = pixels[index];
                     const g = pixels[index + 1];
                     const b = pixels[index + 2];
-                    // Convert to grayscale (luminance)
                     const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
                     if (brightness > this.threshold) {
-                        // Radial focus: 0 at center, 1 at the image edge (elliptical)
                         const nx = (x - cx) / halfW;
                         const ny = (y - cy) / halfH;
                         const dist = Math.sqrt(nx * nx + ny * ny);
-                        // focus = 1 inside core, ramps to 0 by edgeFocus
                         const focus = Math.min(1, Math.max(0,
                             (this.edgeFocus - dist) / (this.edgeFocus - this.coreFocus)));
-                        if (focus <= 0) continue;                 // outside focus -> skip
-                        if (Math.random() > focus) continue;      // thin out toward edges
+                        if (focus <= 0) continue;
+                        if (Math.random() > focus) continue;
  
-                        // Brighter pixels -> larger, whiter dots
                         const t = brightness / 255;
-                        const variance = 0.55 + Math.random() * 0.9; // 0.55–1.45x
-                        // Edge dots also shrink, so the center stays the visual focus
+                        const variance = 0.55 + Math.random() * 0.9;
                         const radius = (1.5 + t * maxRadius) * variance * (0.4 + 0.6 * focus);
-                        // Wide tonal range: shadows -> dark grey, highlights -> white.
-                        // Gamma < 1 lifts shadow detail so darker parts stay visible.
                         const tone = Math.pow(t, 0.7);
                         const shade = Math.round(55 + tone * 200); // 55–255 grey
                         const color = `rgb(${shade},${shade},${shade})`;
