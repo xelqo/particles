@@ -9,9 +9,9 @@ That's the whole thing.
 ## Using it
 
 1. Choose image.
-2. Pick a size, if you care. You probably don't.
+2. Pick a size, if you care to.
 3. Hit Go.
-4. Wave your cursor around for longer than you'd like to admit.
+4. Wave your cursor around.
 
 ## Notes
 
