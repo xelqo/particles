@@ -1,10 +1,21 @@
 const canvas = document.querySelector('#canvas');
 const ctx = canvas.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
 
-canvas.width = window.innerWidth * window.devicePixelRatio;
-canvas.height = window.innerHeight * window.devicePixelRatio;
-canvas.style.width = `${window.innerWidth}px`;
-canvas.style.height = `${window.innerHeight}px`;
+const SIZES = {
+    small:  { w: 420, h: 500 },
+    medium: { w: 520, h: 620 },
+    large:  { w: 640, h: 760 }
+};
+
+let currentImage = null;
+
+function setCanvasSize(w, h) {
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+}
 
 class Particle {
     constructor(x, y, color, radius, effect) {
@@ -13,13 +24,13 @@ class Particle {
         this.color = color;
         this.radius = radius;
         this.effect = effect;
-        this.x = Math.random(x) * this.effect.width;
-        this.y = Math.random(y) * this.effect.height;
+        this.x = Math.random() * this.effect.width;
+        this.y = Math.random() * this.effect.height;
         this.ctx = this.effect.ctx;
         this.vx = 0;
         this.vy = 0;
-        this.ease = 0.02 + Math.random() * 0.02;
-        this.friction = 0.1;
+        this.ease = 0.05 + Math.random() * 0.05;
+        this.friction = 0.90;
         this.dx = 0;
         this.dy = 0;
         this.distance = 0;
@@ -53,91 +64,86 @@ class Particle {
 }
 
 class Effect {
-    constructor(width, height, context) {
-        this.width = width;
-        this.height = height;
+    constructor(canvas, context) {
+        this.canvas = canvas;
         this.ctx = context;
+        this.width = canvas.width;
+        this.height = canvas.height;
         this.particleArray = [];
-        this.gap = 9;
-        this.threshold = 22;
+        this.image = null;
+        this.gap = 5;
+        this.threshold = 40
         this.coreFocus = 0.55;
-        this.edgeFocus = 1.0;
-        this.mouse = {
-            radius: 20000,
-            x: 0,
-            y: 0
-        };
+        this.edgeFocus = 1.0; 
+        this.mouse = { radius: 2000, x: -9999, y: -9999 };
 
-        window.addEventListener('mousemove', e => {
-            this.mouse.x = e.clientX * window.devicePixelRatio;
-            this.mouse.y = e.clientY * window.devicePixelRatio;
+        canvas.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            this.mouse.x = (e.clientX - rect.left) * (this.width / rect.width);
+            this.mouse.y = (e.clientY - rect.top) * (this.height / rect.height);
         });
-
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth * window.devicePixelRatio;
-            canvas.height = window.innerHeight * window.devicePixelRatio;
-            this.width = canvas.width;
-            this.height = canvas.height;
-            canvas.style.width = `${window.innerWidth}px`;
-            canvas.style.height = `${window.innerHeight}px`;
-            if (this.image) this.init(this.image);
+        canvas.addEventListener('mouseleave', () => {
+            this.mouse.x = -9999;
+            this.mouse.y = -9999;
         });
+    }
 
+    resize() {
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+        if (this.image) this.init(this.image);
     }
 
     init(image) {
         this.image = image;
         this.particleArray = [];
- 
-        // Scale image to fit the canvas while keeping aspect ratio (max ~70% of screen)
-        const maxW = this.width * 0.7;
-        const maxH = this.height * 0.7;
-        const scale = Math.min(maxW / image.width, maxH / image.height);
+        const scale = Math.min(this.width * 0.9 / image.width, this.height * 0.9 / image.height);
         const drawW = image.width * scale;
         const drawH = image.height * scale;
         const offsetX = (this.width - drawW) / 2;
         const offsetY = (this.height - drawH) / 2;
- 
+
         this.ctx.clearRect(0, 0, this.width, this.height);
         this.ctx.drawImage(image, offsetX, offsetY, drawW, drawH);
- 
+
         const pixels = this.ctx.getImageData(0, 0, this.width, this.height).data;
         this.ctx.clearRect(0, 0, this.width, this.height);
- 
+
         const maxRadius = this.gap * 0.55;
-        // Center of the drawn image + its half-extents, for the radial focus mask
         const cx = offsetX + drawW / 2;
         const cy = offsetY + drawH / 2;
         const halfW = drawW / 2;
         const halfH = drawH / 2;
- 
+
         for (let y = 0; y < this.height; y += this.gap) {
             for (let x = 0; x < this.width; x += this.gap) {
                 const index = (y * this.width + x) * 4;
                 const alpha = pixels[index + 3];
-                if (alpha > 0) {
-                    const r = pixels[index];
-                    const g = pixels[index + 1];
-                    const b = pixels[index + 2];
-                    const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
-                    if (brightness > this.threshold) {
-                        const nx = (x - cx) / halfW;
-                        const ny = (y - cy) / halfH;
-                        const dist = Math.sqrt(nx * nx + ny * ny);
-                        const focus = Math.min(1, Math.max(0,
-                            (this.edgeFocus - dist) / (this.edgeFocus - this.coreFocus)));
-                        if (focus <= 0) continue;
-                        if (Math.random() > focus) continue;
- 
-                        const t = brightness / 255;
-                        const variance = 0.55 + Math.random() * 0.9;
-                        const radius = (1.5 + t * maxRadius) * variance * (0.4 + 0.6 * focus);
-                        const tone = Math.pow(t, 0.7);
-                        const shade = Math.round(55 + tone * 200); // 55–255 grey
-                        const color = `rgb(${shade},${shade},${shade})`;
-                        this.particleArray.push(new Particle(x, y, color, radius, this));
-                    }
-                }
+                if (alpha === 0) continue;
+
+                const r = pixels[index];
+                const g = pixels[index + 1];
+                const b = pixels[index + 2];
+                const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                if (brightness < this.threshold) continue;
+
+                // Radial focus mask keeps the center, drop edges
+                const nx = (x - cx) / halfW;
+                const ny = (y - cy) / halfH;
+                const dist = Math.sqrt(nx * nx + ny * ny);
+                const focus = Math.min(1, Math.max(0,
+                    (this.edgeFocus - dist) / (this.edgeFocus - this.coreFocus)));
+                if (focus <= 0) continue;
+                if (Math.random() > focus) continue;
+
+                const t = brightness / 255;      // 0 = black, 1 = white
+                const variance = 0.55 + Math.random() * 0.9;
+                const radius = (0.6 + t * maxRadius) * variance * (0.4 + 0.6 * focus);
+                const shade = Math.round(70 + Math.pow(t, 0.7) * 185);
+                const color = `rgb(${shade},${shade},${shade})`;
+
+                this.particleArray.push(new Particle(x, y, color, radius, this));
             }
         }
     }
@@ -150,7 +156,8 @@ class Effect {
     }
 }
 
-const effect = new Effect(canvas.width, canvas.height, ctx);
+setCanvasSize(SIZES.medium.w, SIZES.medium.h);
+const effect = new Effect(canvas, ctx);
 
 function animate() {
     effect.update();
@@ -158,13 +165,30 @@ function animate() {
 }
 animate();
 
-document.querySelector('#upload').addEventListener('change', e => {
+// Controls
+const uploadEl = document.querySelector('#upload');
+const filenameEl = document.querySelector('#filename');
+const goEl = document.querySelector('#go');
+const sizeEl = document.querySelector('#size');
+
+uploadEl.addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
+    filenameEl.textContent = file.name;
     const img = new Image();
     img.onload = () => {
-        effect.init(img);
+        currentImage = img;
         URL.revokeObjectURL(img.src);
     };
-    img.src =URL.createObjectURL(file);
+    img.src = URL.createObjectURL(file);
+});
+
+goEl.addEventListener('click', () => {
+    if (currentImage) effect.init(currentImage);
+});
+
+sizeEl.addEventListener('change', () => {
+    const s = SIZES[sizeEl.value];
+    setCanvasSize(s.w, s.h);
+    effect.resize();
 });
